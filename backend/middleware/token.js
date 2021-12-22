@@ -10,12 +10,9 @@ const createToken = async (id) => {
     }
 }
 
-// add CSRF to frontend for security or switch to session id
-
 const verifyToken = async (req, res, next) => {
     try {
-        console.log(req.body.token)
-        const verifytoken = await jwt.verify(req.body.token, process.env.KEY)
+        const verifytoken = await jwt.verify(req.body.cookie, process.env.KEY)
         req.authkey = verifytoken.id
         next()
     } catch (error) {

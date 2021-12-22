@@ -5,19 +5,28 @@ const { createToken,
     verifyToken,
     emailtoken }
     = require('../middleware/token')
-const session = ('../connections/connect')
+// const session = ('../connections/connect.js')
+
+require('dotenv').config()
+const neo4j = require('neo4j-driver')
+// 
+const driver = neo4j.driver(process.env.URI, neo4j.auth.basic('neo4j', process.env.KEY), { disableLosslessIntegers: true }
+)
+const session = driver.session()
+
 
 const createuser = async (req, res) => {
     try {
-        const createuser = await session.run('CREATE (n:tempstudent {id:apoc.create.uuid(), name:$name , email:$email , rollno:$rollno , sex:$sex , temptoken:$temptoken , password:$password , pid:apoc.create.uudi()}', {
+        const temptoken = await emailtoken(req.body.email)
+        const createuser = await session.run('CREATE (n:tempstudent {id:apoc.create.uuid(), name:$name , email:$email , rollno:$rollno , sex:$sex , temptoken:$temptoken , password:$password , pid:apoc.create.uuid()})', {
             name: req.body.name,
             rollno: req.body.rollno,
             email: req.body.email,
             sex: req.body.sex,
-            temptoken: await emailtoken(req.body.email),
+            temptoken: temptoken,
             password: await hashPassword(req.body.password)
         })
-        res.send({ status: true })
+        res.send({ status: true, data: { token: temptoken } })
     } catch (error) {
         console.log(error)
         res.send({ status: false })
@@ -38,7 +47,7 @@ const verifyuser = async (req, res) => {
 
 const loginuser = async (req, res) => {
     try {
-        const loginuser = await session.run('MATCH (n:Studen {rollno:$rollno}) RETURN n{.password,.id}', {
+        const loginuser = await session.run('MATCH (n:Student {rollno:$rollno}) RETURN n{.password,.id}', {
             rollno: req.body.rollno
         })
         const checkpassword = await verifyHash(req.body.password, loginuser.records[0]._fields[0].password)
@@ -57,7 +66,7 @@ const loginuser = async (req, res) => {
 
 const createpost = async (req, res) => {
     try {
-        const createpost = await session.run('MATCH (n:Student {id:$id}) CREATE (n)-[r:Asked]->(q:Question {id:apoc.create.uuid() question:$question})', {
+        const createpost = await session.run('MATCH (n:Student {id:$id}) CREATE (n)-[r:Asked]->(q:Question {id:apoc.create.uuid(), question:$question})', {
             id: req.authkey,
             question: req.body.question
         })
@@ -78,8 +87,8 @@ const getquestion = async (req, res) => {
                 question: getquestion.records[i]._fields[0].question
             }
             finaldata.push(obj)
-            res.send({ status: true ,data: {question:finaldata}})
         }
+        res.send({ status: true, data: { data: finaldata } })
     } catch (error) {
         console.log(error)
         res.send({ status: false })
@@ -88,8 +97,9 @@ const getquestion = async (req, res) => {
 
 const ansquestion = async (req, res) => {
     try {
-        const ansquestion = await session.run('MATCH (n:Student {id:$id}) , (q:Question {id:$qid}) CREATE (n)-[a:Answer {id:apoc.create.uuid(), answer:$answer}]-(q)', {
+        const ansquestion = await session.run('MATCH (n:Student {id:$id}) , (q:Question {id:$qid}) CREATE (n)-[a:Answer {id:apoc.create.uuid(), answer:$answer}]->(q)', {
             id: req.authkey,
+            qid: req.body.id,
             answer: req.body.answer
         })
         res.send({ status: true })
@@ -101,7 +111,10 @@ const ansquestion = async (req, res) => {
 
 const deletequestion = async (req, res) => {
     try {
-        const deletequestion = await session.run('MATCH (n:Student {id:$id})-[r:Asked]->(q:Question {id:$qid}) DELETE DETACH q')
+        const deletequestion = await session.run('MATCH (n:Student {id:$id})-[r:Asked]->(q:Question {id:$qid}) DETACH DELETE q', {
+            id: req.authkey,
+            qid: req.body.id
+        })
         res.send({ status: true })
     } catch (error) {
         console.log(error)
@@ -111,7 +124,10 @@ const deletequestion = async (req, res) => {
 
 const deleteanswer = async (req, res) => {
     try {
-        const deleteanswer = await session.run('MATCH (s:Student {id:$id})-[r:Answer {id:$aid}]-(q:Question) DELETE DETACH r')
+        const deleteanswer = await session.run('MATCH (s:Student {id:$id})-[r:Answer {id:$aid}]-(q:Question) DELETE r',{
+            id: req.authkey,
+            aid: req.body.id
+        })
         res.send({ status: true })
     } catch (error) {
         console.log(error)
@@ -124,7 +140,15 @@ const getyourquestion = async (req, res) => {
         const getyourquestion = await session.run('MATCH (s:Student {id:$id})-[r:Asked]->(q:Question) RETURN q{.question,.id}', {
             id: req.authkey
         })
-        res.send({ status: true })
+        var finaldata = []
+        for (let i = 0; i < getyourquestion.records.length; i++) {
+            let obj = {
+                id: getyourquestion.records[i]._fields[0].id,
+                question: getyourquestion.records[i]._fields[0].question
+            }
+            finaldata.push(obj)
+        }
+        res.send({ status: true, data: { data: finaldata } })
     } catch (error) {
         console.log(error)
         res.send({ status: false })
@@ -136,30 +160,48 @@ const getyouranswer = async (req, res) => {
         const getyouranswer = await session.run('MATCH (s:Student {id:$id})-[r:Answer]->(q:Question) RETURN r{.answer,.id}', {
             id: req.authkey
         })
-        res.send({ status: true })
+
+        res.send({ status: true, data: {} })
     } catch (error) {
         console.log(error)
         res.send({ status: false })
     }
 }
 
-const getquestionans =  async (req,res) => {
+const getquestionans = async (req, res) => {
     try {
-        const getquestionans = await session.run('MATCH (q:Question {id:$qid})-[r:Answer]-(s:Student) RETURN r{.answer,.id},s{.name,.rollno,.pid}',{
-            id: qid
+        const getquestionans = await session.run('MATCH (q:Question {id:$qid})<-[r:Answer]-(s:Student) RETURN r{.answer,.id},s{.name,.rollno,.pid}', {
+            qid: req.body.id
         })
+        var j = 0
         var finaldata = []
         for (let i = 0; i < getquestionans.records.length; i++) {
-            let obj = {
-                id: getquestionans.records[i]._fields[0].id,
-                name: getquestionans.records[i]._fields[0].name,
-                answer: getquestionans.records[i]._fields[0].answer,
-                rollno: getquestionans.records[i]._fields[0].rollno,
-                pid: getquestionans.records[i]._fields[0].pid
+            var obj = {
+                id: getquestionans.records[i]._fields[j].id,
+                answer: getquestionans.records[i]._fields[j].answer,
+
             }
+            for (; j < getquestionans.records[i]._fields.length; j++) {
+                obj.name = getquestionans.records[i]._fields[j].name
+                obj.pid = getquestionans.records[i]._fields[j].pid
+                obj.rollno = getquestionans.records[i]._fields[j].rollno
+            }
+            j = 0;
             finaldata.push(obj)
-            res.send({ status: true ,data: {question:finaldata}})
         }
+        res.send({ status: true, data: { data: finaldata } })
+    } catch (error) {
+        console.log(error)
+        res.send({ status: false })
+    }
+}
+
+const logout = async (req, res) => {
+    try {
+        const logoutall = await session.run('MATCH (s:Student {id:$id}) REMOVE s.id SET s.id = apoc.create.uuid()', {
+            id: req.authkey
+        })
+        res.send({ status: true })
     } catch (error) {
         console.log(error)
         res.send({ status: false })
@@ -177,5 +219,6 @@ module.exports = {
     deleteanswer,
     getyourquestion,
     getyouranswer,
-    getquestionans
+    getquestionans,
+    logout
 }
