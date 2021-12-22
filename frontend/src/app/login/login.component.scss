@@ -21,9 +21,18 @@ main {
   font-size: 1.8rem;
 }
 
+.heading {
+  text-transform: uppercase;
+  margin-bottom: 6rem;
+  font-size: 2.2rem;
+  font-weight: 400;
+  color: #333;
+}
+
 .form {
   width: 40rem;
   font-size: 1.4rem;
+  position: relative;
   &__group:not(:last-child) {
     margin-bottom: 2rem;
   }
@@ -60,47 +69,23 @@ main {
     transform: translateY(-3rem);
   }
 
-  &__radio {
-    width: 49%;
-    display: inline-block;
-    position: relative;
-
-    &-input {
-      display: none;
-    }
-    &-label {
-      font-size: 1.7rem;
-      padding-left: 4rem;
-    }
+  &-input {
+    display: none;
   }
-
-  &__radio-button {
-    display: block;
-    width: 3rem;
-    height: 3rem;
-    border: 3px solid $color-primary;
-    border-radius: 50%;
-    position: absolute;
-    top: -0.2rem;
-    left: 0;
-
-    &::after {
-      content: "";
-      display: inline-block;
-      width: 2rem;
-      height: 2rem;
-      background-color: $color-primary;
-      border-radius: 50%;
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      opacity: 0;
-    }
+  &-label {
+    font-size: 1.7rem;
+    padding-left: 4rem;
   }
 
   &__submit-button {
     color: #fff;
     background-color: $color-primary;
   }
+}
+
+.forgot-password {
+  position: absolute;
+  right: 0;
+  bottom: 10%;
+  color: orangered;
 }

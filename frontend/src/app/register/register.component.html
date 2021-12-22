@@ -72,9 +72,9 @@
     ></div>
   </div>
   <div class="flex md:w-1/2 justify-center py-10 items-center bg-white">
-    <form class="bg-white">
+    <!-- <form class="bg-white">
       <h1 class="text-gray-800 font-bold text-2xl mb-1">Register Here</h1>
-      <!-- <p class="text-sm font-normal text-gray-600 mb-7">Welcome Back</p> -->
+       <p class="text-sm font-normal text-gray-600 mb-7">Welcome Back</p> 
       <div class="flex items-center border-2 py-2 px-3 rounded-2xl mb-4">
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -180,6 +180,72 @@
       >
         Register
       </button>
+    </form> 
+  -->
+    <form action="#" class="form">
+      <div class="my-3">
+        <h2 class="heading text-center">Create a new account</h2>
+      </div>
+      <div class="form__group">
+        <input
+          type="text"
+          class="form__input"
+          id="fullName"
+          placeholder="Name"
+          autocomplete="off"
+          required
+        />
+        <label for="fullName" class="form__label">Name</label>
+      </div>
+      <div class="form__group">
+        <input
+          type="email"
+          class="form__input"
+          id="email"
+          placeholder="email"
+          required
+        />
+        <label for="email" class="form__label">email</label>
+      </div>
+      <div class="form__group">
+        <input
+          type="text"
+          class="form__input"
+          id="username"
+          placeholder="username"
+          autocomplete="off"
+          required
+        />
+        <label for="username" class="form__label">username"</label>
+      </div>
+      <div class="form__group">
+        <input
+          type="password"
+          class="form__input"
+          id="password"
+          placeholder="password"
+          required
+        />
+        <label for="password" class="form__label">Password</label>
+      </div>
+      <div class="form__submit text-center">
+        <button
+          class="
+            shadow
+            bg-purple-500
+            hover:bg-purple-400
+            focus:shadow-outline focus:outline-none
+            text-white
+            py-3
+            px-5
+            rounded
+          "
+          type="button"
+        >
+          Sign Up
+        </button>
+      </div>
+      <!-- <a href="#" class="forgot-password">Forgot Password?</a> -->
     </form>
   </div>
 </div>
