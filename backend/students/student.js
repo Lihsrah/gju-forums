@@ -6,14 +6,14 @@ const { createToken,
     emailtoken }
     = require('../middleware/token')
 // const session = ('../connections/connect.js')
-
+const sendemail = ('../middleware/email')
 require('dotenv').config()
 const neo4j = require('neo4j-driver')
 
 const driver = neo4j.driver(process.env.URI, neo4j.auth.basic('neo4j', process.env.KEY), { disableLosslessIntegers: true }
 )
 const session = driver.session()
-
+const debug = true
 
 const createuser = async (req, res) => {
     try {
@@ -26,7 +26,12 @@ const createuser = async (req, res) => {
             temptoken: temptoken,
             password: await hashPassword(req.body.password)
         })
-        res.send({ status: true, data: { token: temptoken } })
+        sendemail(req.body.email, 'Welcome to GJU Forum', `click the link below: \n ${temptoken}`)
+        if(debug == true){
+            res.send({ status: true, data: { token: temptoken } })  //remove after testing
+        }else {
+            res.send({status: true})
+        }
     } catch (error) {
         console.log(error)
         res.send({ status: false })
